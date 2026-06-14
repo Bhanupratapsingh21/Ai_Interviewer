@@ -1,0 +1,17 @@
+{
+  "name": "interview-worker",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@deepgram/sdk": "^5.4.0",
+    "openai": "^6.42.0",
+    "ws": "^8.21.0"
+  }
+}
