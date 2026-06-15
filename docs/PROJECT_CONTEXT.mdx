@@ -1,0 +1,181 @@
+---
+title: Project Context — Ai_Interviewer
+---
+
+# Project Context — Ai_Interviewer
+
+**Overview:**
+- Monorepo managed with `turbo` and `bun` workspaces. Root scripts run via `turbo`.
+- Primary apps: `api`, `web`, `interview-worker`.
+- Shared package: `packages/shared` and a `typescript-config` package.
+
+**Top-level files:**
+- Workspace config: [turbo.json](turbo.json)
+- Root package manifest: [package.json](package.json)
+- Bun config: [bunfig.toml](bunfig.toml)
+- Docker compose: [docker-compose.yml](docker-compose.yml) and [docker-compose.prod.yml](docker-compose.prod.yml)
+
+**Monorepo layout (high level):**
+- apps/
+  - api — minimal Hono-based API ([apps/api/package.json](apps/api/package.json), [apps/api/src/index.ts](apps/api/src/index.ts))
+  - web — React + Vite frontend ([apps/web/package.json](apps/web/package.json), [apps/web/src/main.tsx](apps/web/src/main.tsx))
+  - interview-worker — worker using Deepgram/OpenAI ([apps/interview-worker/package.json](apps/interview-worker/package.json), [apps/interview-worker/src/index.ts](apps/interview-worker/src/index.ts))
+- packages/
+  - shared — small shared enums/types ([packages/shared/src/index.ts](packages/shared/src/index.ts))
+  - typescript-config — base tsconfig ([packages/typescript-config/base.json](packages/typescript-config/base.json))
+- docker/ — Dockerfiles and nginx config ([docker/api.Dockerfile](docker/api.Dockerfile), [docker/web.Dockerfile](docker/web.Dockerfile), [docker/worker.Dockerfile](docker/worker.Dockerfile))
+
+**Key files & snippets**
+
+- Root `package.json` scripts and workspace:
+
+```json
+// package.json (root)
+{
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck"
+  },
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+- `apps/api/package.json` (important deps & dev script):
+
+```json
+{
+  "name": "api",
+  "scripts": { "dev": "bun --watch src/index.ts" },
+  "dependencies": {
+    "hono": "^4.12.25",
+    "jsonwebtoken": "^9.0.3",
+    "argon2": "^0.44.0"
+  }
+}
+```
+
+- `apps/api/src/index.ts` (entry):
+
+```ts
+import { Hono } from "hono";
+
+const app = new Hono();
+
+app.get("/", (c) => {
+  return c.json({ service: "api", status: "running" });
+});
+
+export default {
+  port: 3001,
+  fetch: app.fetch,
+};
+```
+
+- `apps/api/prisma/schema.prisma`:
+
+```prisma
+generator client { provider = "prisma-client-js" }
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Test {
+  id String @id @default(uuid())
+}
+```
+
+- `apps/web/package.json` (dev & build):
+
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build"
+  },
+  "dependencies": { "react": "^19.2.6", "react-dom": "^19.2.6" }
+}
+```
+
+- `apps/web/src/main.tsx` (entry):
+
+```tsx
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+```
+
+- `apps/interview-worker/package.json` (worker deps):
+
+```json
+{
+  "dependencies": {
+    "@deepgram/sdk": "^5.4.0",
+    "openai": "^6.42.0",
+    "ws": "^8.21.0"
+  },
+  "scripts": { "dev": "bun --watch src/index.ts" }
+}
+```
+
+- `packages/shared/src/index.ts` (shared enums):
+
+```ts
+export enum UserRole {
+  USER = "USER",
+  COMPANY = "COMPANY",
+  ADMIN = "ADMIN"
+}
+
+export enum SessionStatus {
+  SCHEDULED = "SCHEDULED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED"
+}
+```
+
+**How to run locally (common commands)**
+
+- Install (with Bun):
+
+```bash
+bun install
+```
+
+- Start all dev services (root):
+
+```bash
+bun run dev
+# or
+npm run dev
+```
+
+- Start a specific app:
+
+```bash
+# API
+cd apps/api
+bun dev
+
+# Web
+cd apps/web
+bun dev
+```
+
+**Notes & next steps**
+- Database: `apps/api` uses Prisma pointing to `DATABASE_URL` — set `.env` accordingly.
+- Worker: `interview-worker` expects Deepgram/OpenAI keys in env vars.
+
+---
+
+Generated on: 2026-06-15

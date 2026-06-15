@@ -1,0 +1,785 @@
+# AI Interviewer Platform - Master Context Document
+
+## Project Name
+
+AI Interviewer
+
+---
+
+# Project Goal
+
+Build a SaaS + Open Source AI-powered interviewing platform where companies can create interview roles and candidates can participate in real-time AI voice interviews.
+
+The AI interviewer should:
+
+* Ask questions
+* Listen to candidate responses
+* Generate follow-up questions
+* Evaluate performance
+* Produce structured interview reports
+
+The platform must support:
+
+* Hosted SaaS version
+* Self-hosted Docker deployment
+* Public interview links
+* Invite-only interview links
+* Voice-first interviewing experience
+
+---
+
+# Current Development Stage
+
+Phase: Infrastructure + Authentication Foundation
+
+Current objective:
+
+1. Complete Prisma setup
+2. Build authentication
+3. Build company/user account system
+4. Build interview CRUD
+5. Build session system
+6. Then build AI layer
+
+DO NOT begin Deepgram/OpenAI/WebRTC implementation before authentication and interview management are complete.
+
+---
+
+# Tech Stack
+
+## Frontend
+
+* React
+* TypeScript
+* Vite
+* TailwindCSS
+* React Router
+* Axios
+
+## Backend
+
+* Bun Runtime
+* Hono Framework
+* TypeScript
+
+## Database
+
+* PostgreSQL
+* Prisma ORM
+
+Development database:
+
+* Neon PostgreSQL
+
+Future self-hosting database:
+
+* PostgreSQL Docker container
+
+## Authentication
+
+* JWT
+* Argon2
+
+## AI
+
+### Live Interview
+
+* GPT-4o Mini
+* GPT-4.1 Mini
+
+### Final Evaluation
+
+* GPT-4o
+* GPT-5 family model
+
+## Speech-to-Text
+
+* Deepgram Realtime API
+
+## Text-to-Speech
+
+* OpenAI TTS
+
+## Realtime
+
+* WebSocket
+* WebRTC
+
+## Monorepo
+
+* Turborepo
+* Bun Workspaces
+
+## Deployment
+
+* Docker
+* Docker Compose
+
+---
+
+# Current Repository Structure
+
+```text
+Ai_Interviewer/
+
+├── apps/
+│
+│   ├── api/
+│   │
+│   ├── interview-worker/
+│   │
+│   └── web/
+│
+├── packages/
+│
+│   ├── shared/
+│   ├── eslint-config/
+│   └── typescript-config/
+│
+├── docker/
+│
+│   ├── api.Dockerfile
+│   ├── worker.Dockerfile
+│   ├── web.Dockerfile
+│   └── nginx.conf
+│
+├── docker-compose.yml
+├── docker-compose.prod.yml
+│
+├── .env
+├── .env.example
+├── package.json
+├── turbo.json
+└── bunfig.toml
+```
+
+---
+
+# Current Working Services
+
+## Frontend
+
+Running successfully
+
+```text
+http://localhost:5173
+```
+
+Technology:
+
+* React
+* Vite
+
+---
+
+## API
+
+Running successfully
+
+```text
+http://localhost:3001
+```
+
+Technology:
+
+* Bun
+* Hono
+
+Current test endpoint:
+
+```ts
+GET /
+```
+
+Returns:
+
+```json
+{
+  "status": "API Running"
+}
+```
+
+---
+
+## Interview Worker
+
+Running successfully
+
+Current bootstrap:
+
+```ts
+console.log("🚀 Interview Worker Running")
+```
+
+---
+
+# Turborepo Status
+
+Working successfully.
+
+Command:
+
+```bash
+bun run dev
+```
+
+Starts:
+
+* web
+* api
+* interview-worker
+
+simultaneously.
+
+---
+
+# Package Versions
+
+## Prisma
+
+Pinned to:
+
+```text
+6.16.2
+```
+
+Reason:
+
+Prisma 7 introduced breaking datasource configuration changes.
+
+Prisma 6 is stable and better documented.
+
+---
+
+## Bun
+
+Current version:
+
+```text
+1.3.3
+```
+
+---
+
+# Environment Variables
+
+```env
+DATABASE_URL=
+
+JWT_SECRET=
+
+OPENAI_API_KEY=
+
+DEEPGRAM_API_KEY=
+
+GOOGLE_CLIENT_ID=
+
+GOOGLE_CLIENT_SECRET=
+
+GOOGLE_REDIRECT_URI=
+```
+
+---
+
+# Database
+
+## Development
+
+Using:
+
+Neon PostgreSQL
+
+Connection through:
+
+```env
+DATABASE_URL=
+```
+
+---
+
+## Self Hosted
+
+Docker PostgreSQL available via:
+
+```yaml
+postgres:
+  image: postgres:17
+```
+
+inside docker-compose.yml
+
+---
+
+# Prisma Location
+
+```text
+apps/api/prisma/schema.prisma
+```
+
+---
+
+# Current Prisma Schema
+
+Temporary:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Test {
+  id String @id @default(uuid())
+}
+```
+
+---
+
+# Next Prisma Schema
+
+```prisma
+enum Role {
+  USER
+  COMPANY
+  ADMIN
+}
+
+model Account {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+
+  role Role
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+---
+
+# Shared Package Purpose
+
+Location:
+
+```text
+packages/shared
+```
+
+Purpose:
+
+Shared enums/types between:
+
+* frontend
+* api
+* worker
+
+Examples:
+
+```ts
+export enum UserRole {
+  USER,
+  COMPANY,
+  ADMIN
+}
+```
+
+---
+
+# API Folder Architecture
+
+```text
+apps/api/src/
+
+├── routes/
+├── controllers/
+├── services/
+├── middleware/
+├── config/
+├── lib/
+│
+│   ├── prisma.ts
+│   ├── jwt.ts
+│   └── password.ts
+│
+└── index.ts
+```
+
+---
+
+# Worker Architecture
+
+```text
+apps/interview-worker/src/
+
+├── websocket/
+├── sessions/
+├── ai/
+├── stt/
+├── tts/
+└── index.ts
+```
+
+---
+
+# Authentication Design
+
+## Signup
+
+```http
+POST /auth/signup
+```
+
+Request:
+
+```json
+{
+  "email": "",
+  "password": "",
+  "role": "USER",
+  "name": ""
+}
+```
+
+Flow:
+
+1. Validate input
+2. Hash password
+3. Create Account
+4. Return JWT
+
+---
+
+## Login
+
+```http
+POST /auth/login
+```
+
+Flow:
+
+1. Find account
+2. Verify password
+3. Issue JWT
+
+---
+
+## Protected Route
+
+```http
+GET /me
+```
+
+Requires JWT.
+
+---
+
+# JWT Strategy
+
+Payload:
+
+```ts
+{
+  accountId: string,
+  role: string
+}
+```
+
+Expiration:
+
+```text
+7 days
+```
+
+Storage:
+
+Initially:
+
+```text
+Bearer Token
+```
+
+Later:
+
+```text
+HttpOnly Cookies
+```
+
+---
+
+# Planned Database Models
+
+Future models:
+
+```text
+Account
+UserProfile
+CompanyProfile
+Interview
+Invite
+InterviewSession
+Evaluation
+CalendarEvent
+ResumeAnalysis
+```
+
+---
+
+# Interview System Design
+
+## Company Creates Interview
+
+Fields:
+
+```text
+Title
+Description
+Role
+Difficulty
+Duration
+Question Prompt
+Visibility
+```
+
+Visibility:
+
+```text
+PUBLIC
+INVITE_ONLY
+```
+
+---
+
+# Public Interview Flow
+
+Candidate opens:
+
+```text
+/interview/:id
+```
+
+No login required.
+
+Session created automatically.
+
+---
+
+# Invite Interview Flow
+
+Candidate receives:
+
+```text
+/interview/invite/:token
+```
+
+Token validated.
+
+Session created.
+
+---
+
+# Real-Time Interview Architecture
+
+```text
+Candidate Mic
+      ↓
+Deepgram Realtime STT
+      ↓
+Transcript
+      ↓
+GPT-4o Mini
+      ↓
+Question Generation
+      ↓
+OpenAI TTS
+      ↓
+Candidate Hears Response
+```
+
+Loop until interview completion.
+
+---
+
+# Session State Machine
+
+```text
+WAITING
+
+AI_SPEAKING
+
+USER_SPEAKING
+
+PROCESSING
+
+GENERATING
+
+DISCONNECTED
+
+COMPLETED
+```
+
+---
+
+# Transcript Storage Strategy
+
+Store:
+
+```text
+speaker
+text
+timestamp
+```
+
+Do NOT rely solely on JSON blobs.
+
+Need future analytics/search.
+
+---
+
+# Evaluation Strategy
+
+Final transcript sent to:
+
+GPT-4o / GPT-5
+
+Returns:
+
+```text
+Overall Score
+
+Technical Score
+
+Communication Score
+
+Confidence Score
+
+Problem Solving Score
+
+Strengths
+
+Weaknesses
+
+Recommendation
+```
+
+---
+
+# Resume Analysis Feature
+
+Candidate uploads resume.
+
+AI extracts:
+
+```text
+Skills
+Projects
+Experience
+Education
+```
+
+Stored separately.
+
+AI asks contextual questions based on resume.
+
+---
+
+# SaaS Features
+
+Future:
+
+```text
+Stripe Billing
+Multi-tenancy
+Candidate Analytics
+White Labeling
+Team Accounts
+ATS Integrations
+Custom Branding
+```
+
+---
+
+# Open Source Features
+
+Available in OSS:
+
+```text
+Interview Creation
+Public Interviews
+Invite Interviews
+Deepgram Integration
+OpenAI Integration
+Docker Deployment
+```
+
+---
+
+# SaaS-Only Features
+
+```text
+Stripe Billing
+Advanced Analytics
+Candidate Ranking
+White Label
+Team Management
+ATS Integrations
+```
+
+---
+
+# Immediate Roadmap
+
+## Phase 1
+
+* Prisma Setup
+* JWT Auth
+* Signup
+* Login
+* Protected Routes
+
+## Phase 2
+
+* Company Dashboard
+* Interview CRUD
+* Invite System
+* Session Management
+
+## Phase 3
+
+* Deepgram
+* OpenAI
+* TTS
+* Realtime Worker
+
+## Phase 4
+
+* Evaluations
+* Reports
+* Analytics
+
+## Phase 5
+
+* Billing
+* SaaS Features
+* ATS Integrations
+
+---
+
+# Current Priority
+
+The project is currently in the backend foundation phase.
+
+The next task should be:
+
+1. Push Prisma schema to Neon
+2. Build Account model
+3. Implement Signup
+4. Implement Login
+5. Implement JWT middleware
+6. Implement protected routes
+
+Only after authentication and interview CRUD are completed should AI interview functionality begin.
