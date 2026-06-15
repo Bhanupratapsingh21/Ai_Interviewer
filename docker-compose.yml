@@ -1,4 +1,20 @@
 services:
+  postgres:
+    image: postgres:17
+    container_name: ai-interviewer-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ai_interviewer
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   web:
     build:
       context: .
@@ -13,3 +29,6 @@ services:
     build:
       context: .
       dockerfile: docker/worker.Dockerfile
+
+volumes:
+  postgres_data:

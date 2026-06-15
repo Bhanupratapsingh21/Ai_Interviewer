@@ -2,13 +2,14 @@ import { Hono } from "hono";
 
 const app = new Hono();
 
-app.get("/", c => {
+app.get("/", (c) => {
   return c.json({
-    status: "ok"
+    service: "api",
+    status: "running",
   });
 });
 
 export default {
   port: 3001,
-  fetch: app.fetch
+  fetch: app.fetch,
 };

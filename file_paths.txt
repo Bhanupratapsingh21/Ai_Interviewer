@@ -1,47 +1,78 @@
-d:\mistercom\Ai_Interviewer\.env.example
-d:\mistercom\Ai_Interviewer\bun.lock
-d:\mistercom\Ai_Interviewer\turbo.json
-d:\mistercom\Ai_Interviewer\.gitignore
-d:\mistercom\Ai_Interviewer\docker-compose.prod.yml
-d:\mistercom\Ai_Interviewer\index.ts
-d:\mistercom\Ai_Interviewer\docker-compose.yml
-d:\mistercom\Ai_Interviewer\package.json
-d:\mistercom\Ai_Interviewer\bunfig.toml
-d:\mistercom\Ai_Interviewer\packages\typescript-config\package.json
-d:\mistercom\Ai_Interviewer\packages\typescript-config\base.json
-d:\mistercom\Ai_Interviewer\docker\api.Dockerfile
-d:\mistercom\Ai_Interviewer\docker\nginx.conf
-d:\mistercom\Ai_Interviewer\docker\worker.Dockerfile
-d:\mistercom\Ai_Interviewer\docker\web.Dockerfile
-d:\mistercom\Ai_Interviewer\packages\shared\tsconfig.json
-d:\mistercom\Ai_Interviewer\packages\shared\src\index.ts
-d:\mistercom\Ai_Interviewer\packages\shared\package.json
-d:\mistercom\Ai_Interviewer\apps\web\web\vite.config.ts
-d:\mistercom\Ai_Interviewer\apps\web\web\tsconfig.node.json
-d:\mistercom\Ai_Interviewer\apps\web\web\tsconfig.json
-d:\mistercom\Ai_Interviewer\apps\web\web\tsconfig.app.json
-d:\mistercom\Ai_Interviewer\apps\api\tsconfig.json
-d:\mistercom\Ai_Interviewer\apps\api\README.md
-d:\mistercom\Ai_Interviewer\apps\api\package.json
-d:\mistercom\Ai_Interviewer\apps\api\index.ts
-d:\mistercom\Ai_Interviewer\apps\api\.gitignore
-d:\mistercom\Ai_Interviewer\apps\web\web\index.html
-d:\mistercom\Ai_Interviewer\apps\web\web\eslint.config.js
-d:\mistercom\Ai_Interviewer\apps\web\web\bun.lock
-d:\mistercom\Ai_Interviewer\apps\web\web\.gitignore
-d:\mistercom\Ai_Interviewer\apps\web\web\src\main.tsx
-d:\mistercom\Ai_Interviewer\apps\web\web\src\index.css
-d:\mistercom\Ai_Interviewer\apps\web\web\public\icons.svg
-d:\mistercom\Ai_Interviewer\apps\web\web\public\favicon.svg
-d:\mistercom\Ai_Interviewer\apps\web\web\package.json
-d:\mistercom\Ai_Interviewer\apps\web\web\src\App.css
-d:\mistercom\Ai_Interviewer\apps\web\web\README.md
-d:\mistercom\Ai_Interviewer\apps\web\web\src\App.tsx
-d:\mistercom\Ai_Interviewer\apps\web\web\src\assets\hero.png
-d:\mistercom\Ai_Interviewer\apps\interview-worker\package.json
-d:\mistercom\Ai_Interviewer\apps\interview-worker\index.ts
-d:\mistercom\Ai_Interviewer\apps\interview-worker\.gitignore
-d:\mistercom\Ai_Interviewer\apps\interview-worker\README.md
-d:\mistercom\Ai_Interviewer\apps\interview-worker\tsconfig.json
-d:\mistercom\Ai_Interviewer\apps\web\web\src\assets\vite.svg
-d:\mistercom\Ai_Interviewer\apps\web\web\src\assets\react.svg
+Directory: D:\mistercom\Ai_Interviewer
+
+  apps
+  docker
+  packages
+  .env
+  .env.example
+  .gitignore
+  bun.lock
+  bunfig.toml
+  docker-compose.prod.yml
+  docker-compose.yml
+  file_paths.txt
+  index.ts
+  package.json
+  turbo.json
+
+Directory: D:\mistercom\Ai_Interviewer\apps
+
+  api
+  interview-worker
+  web
+
+Directory: D:\mistercom\Ai_Interviewer\apps\api
+
+  D:\mistercom\Ai_Interviewer\apps\api\.gitignore
+  D:\mistercom\Ai_Interviewer\apps\api\index.ts
+  D:\mistercom\Ai_Interviewer\apps\api\package.json
+  D:\mistercom\Ai_Interviewer\apps\api\README.md
+  D:\mistercom\Ai_Interviewer\apps\api\tsconfig.json
+
+Directory: D:\mistercom\Ai_Interviewer\apps\interview-worker
+
+  D:\mistercom\Ai_Interviewer\apps\interview-worker\.gitignore
+  D:\mistercom\Ai_Interviewer\apps\interview-worker\index.ts
+  D:\mistercom\Ai_Interviewer\apps\interview-worker\package.json
+  D:\mistercom\Ai_Interviewer\apps\interview-worker\README.md
+  D:\mistercom\Ai_Interviewer\apps\interview-worker\tsconfig.json
+
+Directory: D:\mistercom\Ai_Interviewer\apps\web\web
+
+  D:\mistercom\Ai_Interviewer\apps\web\web\.gitignore
+  D:\mistercom\Ai_Interviewer\apps\web\web\bun.lock
+  D:\mistercom\Ai_Interviewer\apps\web\web\eslint.config.js
+  D:\mistercom\Ai_Interviewer\apps\web\web\index.html
+  D:\mistercom\Ai_Interviewer\apps\web\web\package.json
+  D:\mistercom\Ai_Interviewer\apps\web\web\README.md
+  D:\mistercom\Ai_Interviewer\apps\web\web\tsconfig.app.json
+  D:\mistercom\Ai_Interviewer\apps\web\web\tsconfig.json
+  D:\mistercom\Ai_Interviewer\apps\web\web\tsconfig.node.json
+  D:\mistercom\Ai_Interviewer\apps\web\web\vite.config.ts
+  D:\mistercom\Ai_Interviewer\apps\web\web\public\favicon.svg
+  D:\mistercom\Ai_Interviewer\apps\web\web\public\icons.svg
+  D:\mistercom\Ai_Interviewer\apps\web\web\src\App.css
+  D:\mistercom\Ai_Interviewer\apps\web\web\src\App.tsx
+  D:\mistercom\Ai_Interviewer\apps\web\web\src\index.css
+  D:\mistercom\Ai_Interviewer\apps\web\web\src\main.tsx
+  D:\mistercom\Ai_Interviewer\apps\web\web\src\assets\hero.png
+  D:\mistercom\Ai_Interviewer\apps\web\web\src\assets\react.svg
+  D:\mistercom\Ai_Interviewer\apps\web\web\src\assets\vite.svg
+
+Directory: D:\mistercom\Ai_Interviewer\docker
+
+  D:\mistercom\Ai_Interviewer\docker\api.Dockerfile
+  D:\mistercom\Ai_Interviewer\docker\nginx.conf
+  D:\mistercom\Ai_Interviewer\docker\web.Dockerfile
+  D:\mistercom\Ai_Interviewer\docker\worker.Dockerfile
+
+Directory: D:\mistercom\Ai_Interviewer\packages\shared
+
+  D:\mistercom\Ai_Interviewer\packages\shared\package.json
+  D:\mistercom\Ai_Interviewer\packages\shared\tsconfig.json
+  D:\mistercom\Ai_Interviewer\packages\shared\src\index.ts
+
+Directory: D:\mistercom\Ai_Interviewer\packages\typescript-config
+
+  D:\mistercom\Ai_Interviewer\packages\typescript-config\base.json
+  D:\mistercom\Ai_Interviewer\packages\typescript-config\package.json
