@@ -7,6 +7,269 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Test {
-  id String @id @default(uuid())
+// ==================== ENUMS ====================
+
+enum Role {
+  USER
+  COMPANY
+  ADMIN
+}
+
+enum OnboardingStep {
+  PROFILE_SETUP
+  RESUME_UPLOAD
+  SOCIAL_LINKS
+  COMPANY_DETAILS
+  COMPLETED
+}
+
+enum InviteVisibility {
+  PUBLIC
+  INVITE_ONLY
+}
+
+enum InterviewStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SessionStatus {
+  WAITING
+  AI_SPEAKING
+  USER_SPEAKING
+  PROCESSING
+  GENERATING
+  DISCONNECTED
+  COMPLETED
+}
+
+// ==================== AUTH MODELS ====================
+
+model Account {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  isVerified   Boolean  @default(false)
+  
+  // Relationships
+  userProfile   UserProfile?
+  companyProfile CompanyProfile?
+  sessions      Session[]
+  otpCodes      OtpCode[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([username])
+}
+
+model UserProfile {
+  id            String   @id @default(uuid())
+  accountId     String   @unique
+  fullName      String
+  avatarUrl     String?
+  phoneNumber   String?
+  
+  // Professional Info
+  college       String?
+  degree        String?
+  graduationYear Int?
+  experience    Int?     // Years of experience
+  
+  // Social Links
+  githubUrl     String?
+  linkedinUrl   String?
+  portfolioUrl  String?
+  
+  // Resume
+  resumeUrl     String?   // S3/Cloudinary URL
+  resumeAnalyzed Boolean  @default(false)
+  
+  // Onboarding
+  onboardingStep OnboardingStep @default(PROFILE_SETUP)
+  onboardingData Json?      // Flexible JSON for partial saves
+  
+  // Relations
+  account       Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  interviews    Interview[] // This will be a many-to-many relation
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([fullName])
+}
+
+model CompanyProfile {
+  id            String   @id @default(uuid())
+  accountId     String   @unique
+  companyName   String
+  description   String?
+  website       String?
+  industry      String?
+  companySize   String?   // e.g., "1-10", "11-50", "51-200", "201-500", "500+"
+  logoUrl       String?
+  
+  // Onboarding
+  onboardingStep OnboardingStep @default(COMPANY_DETAILS)
+  onboardingData Json?
+  
+  // Relations
+  account       Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  interviews    Interview[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([companyName])
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  accountId String
+  code      String   // 6-digit code
+  type      String   // "VERIFY", "RESET_PASSWORD"
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  
+  // Rate limiting
+  attempts  Int      @default(0)
+  
+  // Relations
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+
+  @@unique([accountId, type])
+  @@index([accountId])
+  @@index([code])
+}
+
+model Session {
+  id            String   @id @default(uuid())
+  accountId     String
+  refreshToken  String   @unique
+  userAgent     String?
+  ipAddress     String?
+  expiresAt     DateTime
+  revoked       Boolean  @default(false)
+  
+  // Relations
+  account       Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([refreshToken])
+}
+
+// ==================== INTERVIEW MODELS ====================
+
+model Interview {
+  id              String   @id @default(uuid())
+  companyId       String   // CompanyProfile.id
+  title           String
+  description     String?
+  role            String   // e.g., "Frontend Developer", "Product Manager"
+  difficulty      String   // "BEGINNER", "INTERMEDIATE", "ADVANCED"
+  duration        Int      // Duration in minutes
+  
+  // Interview content
+  questionPrompt  String?   // Custom prompt for AI to generate questions
+  customQuestions Json?     // Array of custom questions
+  
+  // Settings
+  visibility      InviteVisibility @default(PUBLIC)
+  status          InterviewStatus  @default(DRAFT)
+  
+  // Relations
+  company         CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sessions        InterviewSession[]
+  invites         Invite[]
+  userProfiles    UserProfile[]   // Many-to-many with UserProfile
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+  @@index([visibility])
+}
+
+model Invite {
+  id          String   @id @default(uuid())
+  interviewId String
+  email       String?   // Optional, if specific candidate
+  token       String   @unique
+  expiresAt   DateTime
+  used        Boolean  @default(false)
+  usedBy      String?   // AccountId or session ID for anonymous
+  
+  // Relations
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  session     InterviewSession?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([interviewId])
+  @@index([token])
+  @@index([email])
+}
+
+
+
+model InterviewSession {
+  id            String         @id @default(uuid())
+  interviewId   String
+  candidateId   String?
+  inviteId      String?        @unique
+
+  status        SessionStatus  @default(WAITING)
+  currentState  Json?
+  transcript    Json?
+
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  interview     Interview      @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  invite        Invite?        @relation(fields: [inviteId], references: [id])
+  evaluation    Evaluation?    // ← back-reference only, no fields/references
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([interviewId])
+  @@index([candidateId])
+  @@index([status])
+}
+
+
+
+model Evaluation {
+  id                  String   @id @default(uuid())
+  sessionId           String   @unique   // ← FK lives here
+  overallScore        Float
+  technicalScore      Float?
+  communicationScore  Float?
+  confidenceScore     Float?
+  problemSolvingScore Float?
+
+  strengths        Json?
+  weaknesses       Json?
+  recommendation   String?
+  detailedFeedback String?
+
+  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId])
+  @@index([overallScore])
 }
