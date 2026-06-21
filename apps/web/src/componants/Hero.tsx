@@ -121,7 +121,7 @@ export const HeroSection = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Active Workspace Sandbox
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-black ">
             Your Meeting, <span className="bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 bg-clip-text text-transparent">AI Supercharged</span>
           </h1>
           <p className="text-base md:text-lg text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto">
@@ -355,18 +355,18 @@ const GridPattern = ({ offsetX, offsetY }: { offsetX: any, offsetY: any }) => {
       <defs>
         <motion.pattern
           id="grid-pattern"
-          width="40"
-          height="40"
+          width="50"
+          height="50"
           patternUnits="userSpaceOnUse"
           x={offsetX}
           y={offsetY}
         >
           <path
-            d="M 40 0 L 0 0 0 40"
+            d="M 50 0 L 0 0 0 50"
             fill="none"
             stroke="currentColor"
             strokeWidth="1"
-            className="text-neutral-300 dark:text-neutral-700" 
+            className="text-neutral-900 dark:text-neutral-700" 
           />
         </motion.pattern>
       </defs>
