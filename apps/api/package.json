@@ -7,14 +7,18 @@
     "dev": "bun --watch src/index.ts"
   },
   "devDependencies": {
+    "@types/argon2": "^0.15.4",
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.0.1",
     "argon2": "^0.44.0",
     "hono": "^4.12.25",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.4.3"
   }
 }
