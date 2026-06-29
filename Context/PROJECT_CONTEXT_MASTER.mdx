@@ -1,0 +1,549 @@
+
+---
+title: AI Interviewer — Master Project Context
+version: 1.0
+last_updated: 2026-06-29
+---
+
+# AI Interviewer — Master Context
+
+> This document is the single source of truth for AI coding agents (Claude Code, Cursor, Gemini CLI, Codex, MCPs).
+
+---
+
+# Product Vision
+
+AI Interviewer is an AI-first interviewing platform where companies create interviews and candidates participate in real-time voice interviews with an AI interviewer.
+
+Core goals:
+
+- AI voice interviews
+- Public & invite-only interviews
+- Resume-aware questioning
+- Automatic evaluation
+- Docker self-hosting
+- SaaS deployment
+
+---
+
+# Current Status
+
+## Infrastructure
+
+✅ Completed
+
+- Bun 1.3.3
+- Turborepo
+- Bun Workspaces
+- React + Vite
+- Hono API
+- Prisma 6.16.2
+- PostgreSQL
+- Docker structure
+- Shared package
+- Interview worker package
+
+Current phase:
+
+Backend Foundation
+
+Do NOT begin realtime AI until backend foundation is complete.
+
+---
+
+# Repository
+
+apps/
+  api/
+  web/
+  interview-worker/
+
+packages/
+  shared/
+  eslint-config/
+  typescript-config/
+
+docker/
+
+docs/
+
+---
+
+# Stack
+
+Frontend
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS v4
+- Framer Motion
+- Shadcn UI
+
+Backend
+- Bun
+- Hono
+- TypeScript
+
+Database
+- PostgreSQL
+- Prisma ORM 6.16.2
+
+AI
+- OpenAI
+- Deepgram
+- WebSocket
+
+Deployment
+- Docker
+- Docker Compose
+
+---
+
+# Root Commands
+
+Development
+
+bun run dev
+
+Database
+
+bun run db:push
+bun run db:generate
+bun run db:studio
+
+Production
+
+bun run build
+bun run start
+
+Docker
+
+bun run docker:build
+bun run docker:up
+bun run docker:logs
+bun run docker:down
+
+Deployment
+
+bun run deploy
+
+---
+
+# Turborepo
+
+global env
+
+- NODE_ENV
+- DATABASE_URL
+- JWT_SECRET
+- OPENAI_API_KEY
+- DEEPGRAM_API_KEY
+- BREVO_API_KEY
+- BREVO_SMTP_HOST
+- BREVO_SMTP_PORT
+- BREVO_SMTP_USER
+- BREVO_SMTP_PASS
+- PORT
+- REDIS_URL
+
+Pipeline
+
+build
+dev
+start
+lint
+typecheck
+clean
+db:push
+db:generate
+
+---
+
+# Prisma Models
+
+Authentication
+
+- Account
+- UserProfile
+- CompanyProfile
+- Session
+- OtpCode
+
+Interview
+
+- Interview
+- Invite
+- InterviewSession
+- Evaluation
+
+Enums
+
+- Role
+- OnboardingStep
+- InviteVisibility
+- InterviewStatus
+- SessionStatus
+
+---
+
+# Architecture
+
+Route
+
+↓
+
+Validator (Zod)
+
+↓
+
+Controller
+
+↓
+
+Service
+
+↓
+
+Repository
+
+↓
+
+Prisma
+
+↓
+
+PostgreSQL
+
+Controllers should NEVER directly use Prisma.
+
+---
+
+# Authentication
+
+Endpoints
+
+POST /auth/signup
+
+POST /auth/login
+
+POST /auth/logout
+
+POST /auth/refresh
+
+GET /auth/me
+
+POST /auth/send-verification
+
+POST /auth/verify
+
+POST /auth/forgot-password
+
+POST /auth/reset-password
+
+Password
+
+Argon2
+
+Token
+
+JWT
+
+Refresh tokens stored in Session table.
+
+---
+
+# User Flow
+
+Signup
+
+↓
+
+Email Verification
+
+↓
+
+Onboarding
+
+↓
+
+Resume Upload
+
+↓
+
+Interview
+
+↓
+
+Evaluation
+
+---
+
+# Company Flow
+
+Signup
+
+↓
+
+Verification
+
+↓
+
+Company Profile
+
+↓
+
+Create Interview
+
+↓
+
+Generate Invite
+
+↓
+
+Candidate Completes Interview
+
+↓
+
+Review Evaluation
+
+---
+
+# Interview Flow
+
+Company creates interview
+
+↓
+
+Invite or Public
+
+↓
+
+Interview Session
+
+↓
+
+Realtime Worker
+
+↓
+
+Transcript
+
+↓
+
+Evaluation
+
+↓
+
+Dashboard
+
+---
+
+# Worker
+
+Responsible for
+
+- Deepgram STT
+- OpenAI
+- TTS
+- Session orchestration
+
+The worker should receive only
+
+sessionId
+
+---
+
+# API Folder Structure
+
+src/
+
+config/
+constants/
+controllers/
+middleware/
+repositories/
+routes/
+schemas/
+services/
+types/
+utils/
+validators/
+lib/
+
+---
+
+# Shared Libraries
+
+lib/prisma.ts
+
+lib/jwt.ts
+
+lib/password.ts
+
+config/env.ts
+
+utils/api-response.ts
+
+---
+
+# Coding Standards
+
+- Strict TypeScript
+- Zod validation
+- Repository Pattern
+- No business logic in controllers
+- Services contain business logic
+- Prisma only inside repositories
+- Consistent API responses
+- Throw typed errors
+
+---
+
+# API Response
+
+Success
+
+{
+  "success": true,
+  "message": "",
+  "data": {}
+}
+
+Failure
+
+{
+  "success": false,
+  "message": "",
+  "errors": []
+}
+
+---
+
+# Environment Variables
+
+DATABASE_URL
+
+JWT_SECRET
+
+OPENAI_API_KEY
+
+DEEPGRAM_API_KEY
+
+BREVO_API_KEY
+
+BREVO_SMTP_HOST
+
+BREVO_SMTP_PORT
+
+BREVO_SMTP_USER
+
+BREVO_SMTP_PASS
+
+PORT
+
+REDIS_URL
+
+---
+
+# Docker
+
+Compose exists.
+
+Need to complete
+
+- api.Dockerfile
+- worker.Dockerfile
+- web.Dockerfile
+- nginx.conf
+- docker-compose.prod.yml
+
+---
+
+# Current Progress
+
+Completed
+
+✅ Monorepo
+✅ Turbo
+✅ Bun
+✅ Prisma
+✅ Database schema
+✅ Frontend scaffold
+✅ Worker scaffold
+
+Pending
+
+❌ Auth
+❌ User onboarding
+❌ Company onboarding
+❌ Interview CRUD
+❌ Invite system
+❌ Session engine
+❌ Realtime AI
+❌ Evaluations
+❌ Analytics
+❌ Billing
+
+---
+
+# Immediate Roadmap
+
+Phase 1
+
+- Backend Architecture
+- Env Validation
+- Prisma Client
+- JWT
+- Password Utils
+- Auth
+
+Phase 2
+
+- User Profile
+- Company Profile
+
+Phase 3
+
+- Interview CRUD
+
+Phase 4
+
+- Invite Links
+
+Phase 5
+
+- Session Engine
+
+Phase 6
+
+- Worker
+
+Phase 7
+
+- AI
+
+Phase 8
+
+- Reports
+
+Phase 9
+
+- Billing
+
+---
+
+# Rules for Coding Agents
+
+- Never bypass architecture.
+- Never put Prisma inside controllers.
+- Never skip validation.
+- Prefer reusable services.
+- Keep modules isolated.
+- Build backend before AI.
+- Keep Docker compatible.
+- Maintain Bun + Turborepo compatibility.
+- Preserve Prisma 6.16.2 unless explicitly upgraded.
+- Prefer REST APIs.
+- Keep code production-ready.
+
+This document should be treated as the primary context for future development.
