@@ -1,376 +1,578 @@
-import React, { useState, useRef } from "react";
-import { cn } from "@/lib/utils";
-import { 
-  motion, 
-  useMotionValue, 
-  useMotionTemplate, 
-  useAnimationFrame 
-} from "framer-motion";
-import { 
-  Sparkles, 
-  Search, 
-  PenTool, 
-  Lightbulb, 
-  Video, 
-  MicOff, 
-  Mic, 
-  ChevronDown, 
-  Smile, 
-  Monitor, 
-  PhoneOff, 
-  Send 
-} from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
 
-export const HeroSection = () => {
-  const [count, setCount] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+// Custom typewriter hook
+function useTypewriter(text: string, speed: number = 38, startDelay: number = 600) {
+  const [displayed, setDisplayed] = useState("");
+  const [done, setDone] = useState(false);
 
-  // Interaction States for Call Window
+  useEffect(() => {
+    let index = 0;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    const delayId = setTimeout(() => {
+      intervalId = setInterval(() => {
+        setDisplayed((prev) => prev + text.charAt(index));
+        index++;
+        if (index >= text.length) {
+          clearInterval(intervalId);
+          setDone(true);
+        }
+      }, speed);
+    }, startDelay);
+
+    return () => {
+      clearTimeout(delayId);
+      if (intervalId !== undefined) clearInterval(intervalId);
+    };
+  }, [text, speed, startDelay]);
+
+  return { displayed, done };
+}
+
+export default function MainframeHero() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showPills, setShowPills] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Background Video Refs & State
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const prevXRef = useRef<number | null>(null);
+  const targetTimeRef = useRef<number>(0);
+  const isSeekingRef = useRef<boolean>(false);
+
+  const videoSrc = "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260530_042513_df96a13b-6155-4f6e-8b93-c9dee66fba08.mp4";
+
+  // AI Interviewer Call States
   const [isCameraActive, setIsCameraActive] = useState(true);
-  const [isMicActive, setIsMicActive] = useState(false); // Default false to match screenshot
-  const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isMicActive, setIsMicActive] = useState(false);
+  const [chatInputValue, setChatInputValue] = useState("");
+  const [isAITyping, setIsAITyping] = useState(false);
   const [chatLog, setChatLog] = useState<string[]>([
-    'Added corresponding "ghost" stroke lines for both series.'
+    "Welcome! I am A.R.I.A. Let's start with your background. Could you introduce yourself?"
   ]);
 
-  // Handle grid tracking coordinates
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+  // Entrance triggers
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowPills(true);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const { left, top } = e.currentTarget.getBoundingClientRect();
-    mouseX.set(e.clientX - left);
-    mouseY.set(e.clientY - top);
+  // Monitor mouse movement to control video currentTime scrubbing
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const video = videoRef.current;
+      if (!video || !video.duration || isNaN(video.duration)) return;
+
+      const currentX = e.clientX;
+      if (prevXRef.current === null) {
+        prevXRef.current = currentX;
+        return;
+      }
+
+      const delta = currentX - prevXRef.current;
+      prevXRef.current = currentX;
+
+      const SENSITIVITY = 0.8;
+      const timeOffset = (delta / window.innerWidth) * SENSITIVITY * video.duration;
+
+      let nextTime = video.currentTime + timeOffset;
+      
+      // Clamp values within bounds of duration
+      if (nextTime < 0) nextTime = 0;
+      if (nextTime > video.duration) nextTime = video.duration;
+
+      targetTimeRef.current = nextTime;
+
+      if (!isSeekingRef.current) {
+        isSeekingRef.current = true;
+        video.currentTime = nextTime;
+      }
+    };
+
+    const handleMouseLeave = () => {
+      prevXRef.current = null;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseleave", handleMouseLeave);
+    
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, []);
+
+  // Queue up next seek frame once current seek is complete to prevent flooding
+  const handleSeeked = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (Math.abs(video.currentTime - targetTimeRef.current) > 0.05) {
+      video.currentTime = targetTimeRef.current;
+    } else {
+      isSeekingRef.current = false;
+    }
   };
 
-  const gridOffsetX = useMotionValue(0);
-  const gridOffsetY = useMotionValue(0);
+  const copyEmailToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText("hello@mainframe.co");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.warn("Failed to copy", err);
+    }
+  };
 
-  const speedX = 0.3; 
-  const speedY = 0.3;
-
-  useAnimationFrame(() => {
-    const currentX = gridOffsetX.get();
-    const currentY = gridOffsetY.get();
-    gridOffsetX.set((currentX + speedX) % 40);
-    gridOffsetY.set((currentY + speedY) % 40);
-  });
-
-  const maskImage = useMotionTemplate`radial-gradient(350px circle at ${mouseX}px ${mouseY}px, black, transparent)`;
-
-  // Handle Interactive Chat submits
-  const handleSendMessage = (e?: React.FormEvent) => {
+  // AI chat reply simulations
+  const handleSendChat = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!chatInputValue.trim()) return;
 
-    const userMessage = inputValue;
-    setChatLog((prev) => [...prev, userMessage]);
-    setInputValue("");
-    setIsTyping(true);
+    const userMsg = chatInputValue;
+    setChatLog((prev) => [...prev, userMsg]);
+    setChatInputValue("");
+    setIsAITyping(true);
 
-    // Simulate AI context generator matching the user prompt
     setTimeout(() => {
-      let reply = "Checking contextual visual components in your current view...";
-      if (userMessage.toLowerCase().includes("cover letter")) {
-        reply = "Here is a brief outline for your Product Design role. Let me know if you would like to expand this context.";
-      } else if (userMessage.toLowerCase().includes("ideas")) {
-        reply = "Consider adding live-data overlays, high contrast modes, and smart summaries for meetings.";
-      } else if (userMessage.toLowerCase().includes("anything")) {
-        reply = "I'm ready. Ask me to draft summaries, query transcripts, or design layout revisions.";
+      let reply = "That sounds fascinating. How do you apply these technical architectures to scalable production setups?";
+      if (userMsg.toLowerCase().includes("resume")) {
+        reply = "Analyzing your credentials. Your experience with Next.js and distributed platforms matches our benchmark metrics.";
+      } else if (userMsg.toLowerCase().includes("free") || userMsg.toLowerCase().includes("pricing")) {
+        reply = "You can launch your first 3 full-scope simulation interviews free of charge. No credit card required.";
       }
       setChatLog((prev) => [...prev, reply]);
-      setIsTyping(false);
+      setIsAITyping(false);
     }, 1200);
   };
 
-  const selectSuggestion = (text: string) => {
-    setInputValue(text);
-  };
+  const { displayed, done } = useTypewriter(
+    "Glad you stopped in. Good taste tends to find us. Now, what are we building?",
+    38,
+    600
+  );
 
   return (
-    <div
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      className={cn(
-        "relative w-full min-h-screen py-16 md:py-24 flex flex-col items-center justify-start overflow-hidden bg-[#FAFAFB] dark:bg-[#0B0B0C] transition-colors duration-300"
-      )}
-    >
-      {/* Background Scrolling Grid Patterns */}
-      <div className="absolute inset-0 z-0 opacity-[0.04] dark:opacity-[0.07] pointer-events-none">
-        <GridPattern offsetX={gridOffsetX} offsetY={gridOffsetY} />
-      </div>
-      <motion.div 
-        className="absolute inset-0 z-0 opacity-20 dark:opacity-40 pointer-events-none"
-        style={{ maskImage, WebkitMaskImage: maskImage }}
+    <div className="relative min-h-screen w-full text-black">
+      
+      {/* Fixed Scrubbing Background Video */}
+      <video
+        ref={videoRef}
+        src={videoSrc}
+        className="fixed inset-0 w-full h-full object-cover z-0"
+        style={{ objectPosition: "70% center" }}
+        muted
+        playsInline
+        preload="auto"
+        onSeeked={handleSeeked}
+      />
+
+    
+
+      {/* NAVIGATION BAR */}
+      <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-5 sm:px-8 py-4 sm:py-5 border-b border-black/5">
+        <div className="flex items-center gap-3">
+          <span 
+            className="text-[21px] sm:text-[26px] tracking-tight text-black select-none"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            ElevateAI® <span className="text-[25px] sm:text-[30px] text-black select-none leading-none">
+            ✳︎
+          </span>
+          </span>
+         
+        </div>
+
+        {/* Desktop Links */}
+        <div className="hidden md:flex items-center text-[20px] text-black font-normal">
+          <a href="#features" className="hover:opacity-60 transition-opacity">Features</a>
+          <span className="whitespace-pre">, </span>
+          <a href="#how-it-works" className="hover:opacity-60 transition-opacity">How It Works</a>
+          <span className="whitespace-pre">, </span>
+          <a href="#pricing" className="hover:opacity-60 transition-opacity">Pricing</a>
+          <span className="whitespace-pre">, </span>
+          <a href="#faq" className="hover:opacity-60 transition-opacity">FAQ</a>
+        </div>
+
+        {/* Desktop CTA */}
+        <div className="hidden md:block">
+          <a 
+            href="#touch" 
+            className="text-[23px] text-black underline underline-offset-2 hover:opacity-60 transition-opacity font-normal"
+          >
+            Get in touch
+          </a>
+        </div>
+
+        {/* Mobile Hamburger menu */}
+        <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="flex flex-col gap-[5px] z-50 md:hidden relative focus:outline-none"
+          aria-label="Toggle Navigation Menu"
+        >
+          <div className={`w-6 h-[2px] bg-black transition-all duration-300 ${isMenuOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
+          <div className={`w-6 h-[2px] bg-black transition-all duration-300 ${isMenuOpen ? "opacity-0" : ""}`} />
+          <div className={`w-6 h-[2px] bg-black transition-all duration-300 ${isMenuOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
+        </button>
+      </nav>
+
+      {/* Mobile Drawer Overlay */}
+      <div 
+        className={`fixed inset-0 bg-white/95 backdrop-blur-sm z-40 flex flex-col justify-center items-start px-8 gap-8 transition-opacity duration-300 md:hidden ${
+          isMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
       >
-        <GridPattern offsetX={gridOffsetX} offsetY={gridOffsetY} />
-      </motion.div>
-
-      {/* Atmospheric Background Blurred Orbs */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute right-[-10%] top-[-10%] w-[50%] h-[50%] rounded-full bg-orange-500/10 dark:bg-orange-500/5 blur-[120px]" />
-        <div className="absolute left-[-10%] bottom-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-500/15 dark:bg-cyan-500/5 blur-[120px]" />
+        <a href="#features" onClick={() => setIsMenuOpen(false)} className="text-[32px] font-medium hover:opacity-60 transition-opacity">Features</a>
+        <a href="#how-it-works" onClick={() => setIsMenuOpen(false)} className="text-[32px] font-medium hover:opacity-60 transition-opacity">How It Works</a>
+        <a href="#pricing" onClick={() => setIsMenuOpen(false)} className="text-[32px] font-medium hover:opacity-60 transition-opacity">Pricing</a>
+        <a href="#faq" onClick={() => setIsMenuOpen(false)} className="text-[32px] font-medium hover:opacity-60 transition-opacity">FAQ</a>
+        <a href="#touch" onClick={() => setIsMenuOpen(false)} className="text-[32px] font-medium underline underline-offset-4 hover:opacity-60 transition-opacity">Get in touch</a>
       </div>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 flex flex-col items-center space-y-12">
-        
-        {/* Header Hero Branding */}
-        <div className="text-center space-y-4 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800 text-xs font-medium text-neutral-600 dark:text-neutral-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Active Workspace Sandbox
-          </div>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-black ">
-            Your Meeting, <span className="bg-gradient-to-r from-cyan-500 via-purple-500 to-orange-500 bg-clip-text text-transparent">AI Supercharged</span>
-          </h1>
-          <p className="text-base md:text-lg text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto">
-            Interact with the camera triggers below, test suggestion chips, or type replies inside the floating assistant frame.
-          </p>
-        </div>
-
-        {/* Cloned Call Window Container */}
-        <div className="w-full max-w-5xl rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/70 dark:bg-[#121214]/70 backdrop-blur-md shadow-2xl overflow-hidden flex flex-col aspect-video min-h-[500px] md:min-h-[580px]">
+      {/* HERO SECTION CONTAINER */}
+      <section className="relative z-10 min-h-screen w-full flex flex-col pt-24 sm:pt-28 md:pt-32 px-5 sm:px-8 md:px-10 justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-7xl mx-auto w-full pb-16">
           
-          {/* Mockup Title bar (macOS Style Traffic Lights) */}
-          <div className="h-11 border-b border-neutral-200/60 dark:border-neutral-800/60 flex items-center px-4 bg-neutral-50/80 dark:bg-[#161619]/80 justify-between select-none">
-            <div className="flex gap-2">
-              <div className="w-3 h-3 rounded-full bg-neutral-200 dark:bg-neutral-800" />
-              <div className="w-3 h-3 rounded-full bg-neutral-200 dark:bg-neutral-800" />
-              <div className="w-3 h-3 rounded-full bg-neutral-200 dark:bg-neutral-800" />
-            </div>
-            <div className="text-xs text-neutral-400 dark:text-neutral-500 font-medium">
-              Call Space - Infinite Workspace
-            </div>
-            <div className="w-10" />
-          </div>
-
-          {/* Main Workspace Frame */}
-          <div className="flex-1 relative bg-[#F7F7F9] dark:bg-[#0A0A0B] p-4 md:p-6 flex flex-col justify-between overflow-hidden">
+          {/* Left Text Column */}
+          <div className="lg:col-span-5 flex flex-col justify-center">
             
-            {/* Call Participants Video Box and Floating UI Panel */}
-            <div className="relative flex-1 w-full flex flex-col md:flex-row gap-4 items-stretch mb-16 md:mb-20">
-              
-              {/* Participant "You" (Left Grid) */}
-              <div className={cn(
-                "flex-1 rounded-2xl overflow-hidden relative bg-neutral-100 dark:bg-neutral-900 shadow-sm border-2 transition-all duration-300",
-                isCameraActive ? "border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.15)]" : "border-neutral-200 dark:border-neutral-800"
-              )}>
-                {isCameraActive ? (
-                  <img 
-                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&h=600&q=80" 
-                    alt="You" 
-                    className="w-full h-full object-cover scale-x-[-1]"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-150 dark:bg-neutral-900 text-neutral-400">
-                    <Video className="w-8 h-8 mb-2 opacity-45" />
-                    <span className="text-xs">Camera Feed Inactive</span>
-                  </div>
-                )}
-                <div className="absolute bottom-3 left-3 bg-neutral-900/75 dark:bg-neutral-950/80 backdrop-blur-md text-[11px] font-medium text-white px-2.5 py-1 rounded-md">
-                  You
-                </div>
-              </div>
-
-              {/* Participant "Mira" (Right Grid) */}
-              <div className="flex-1 rounded-2xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800/80 relative bg-neutral-100 dark:bg-neutral-900 shadow-sm">
-                <img 
-                  src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&h=600&q=80" 
-                  alt="Mira" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute bottom-3 left-3 bg-neutral-900/75 dark:bg-neutral-950/80 backdrop-blur-md text-[11px] font-medium text-white px-2.5 py-1 rounded-md">
-                  Mira
-                </div>
-              </div>
-
-              {/* Floating AI Panel (Replicates original right overlay card) */}
-              <div className="md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2 w-full md:w-[360px] bg-[#222225]/95 dark:bg-[#131315]/95 backdrop-blur-lg border border-white/10 rounded-2xl shadow-2xl p-4 text-white flex flex-col space-y-4 z-20 self-start md:self-auto mt-4 md:mt-0">
-                
-                {/* Multi-gradient Glowing AI Icon and Title */}
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-400 via-pink-500 to-amber-400 p-[1.5px] flex items-center justify-center shadow-lg shadow-purple-500/10">
-                    <div className="w-full h-full bg-[#1e1e21] rounded-[7px] flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-cyan-300" />
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-[14px] font-semibold tracking-tight text-neutral-100 leading-snug">
-                      Hi Irung, how can I help you today?
-                    </h4>
-                  </div>
-                </div>
-
-                {/* Suggestions Section */}
-                <div className="space-y-2">
-                  <span className="text-[9px] uppercase tracking-wider text-neutral-400 font-bold">Suggestions</span>
-                  <div className="space-y-1.5">
-                    <button 
-                      onClick={() => selectSuggestion("Ask Anything")}
-                      className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/15 text-neutral-200 text-xs text-left transition-colors duration-200 border border-white/[0.03]"
-                    >
-                      <Search className="w-3.5 h-3.5 text-neutral-400" />
-                      <span>Ask Anything</span>
-                    </button>
-                    <button 
-                      onClick={() => selectSuggestion("Write a cover letter")}
-                      className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/15 text-neutral-200 text-xs text-left transition-colors duration-200 border border-white/[0.03]"
-                    >
-                      <PenTool className="w-3.5 h-3.5 text-neutral-400" />
-                      <span>Write a cover letter</span>
-                    </button>
-                    <button 
-                      onClick={() => selectSuggestion("Explore ideas")}
-                      className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/15 text-neutral-200 text-xs text-left transition-colors duration-200 border border-white/[0.03]"
-                    >
-                      <Lightbulb className="w-3.5 h-3.5 text-neutral-400" />
-                      <span>Explore ideas</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Simulated Conversation and Interactive Input */}
-                <div className="rounded-xl bg-white/[0.04] border border-white/[0.06] p-3 space-y-3">
-                  <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1 text-[12px] leading-relaxed text-neutral-300">
-                    {chatLog.map((message, idx) => (
-                      <div key={idx} className={cn(
-                        "p-2 rounded-lg",
-                        idx % 2 === 0 ? "bg-white/[0.02] text-neutral-300" : "bg-cyan-500/10 text-cyan-200 border-l-2 border-cyan-400"
-                      )}>
-                        {message}
-                      </div>
-                    ))}
-                    {isTyping && (
-                      <div className="text-xs text-neutral-400 italic animate-pulse">
-                        Analyzing meeting scope...
-                      </div>
-                    )}
-                  </div>
-
-                  <form onSubmit={handleSendMessage} className="border-t border-white/[0.08] pt-2 flex items-center">
-                    <input 
-                      type="text" 
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      placeholder="Reply..." 
-                      className="w-full bg-transparent border-none outline-none text-xs text-neutral-200 placeholder-neutral-500 py-1"
-                    />
-                    {inputValue.trim() && (
-                      <button type="submit" className="text-neutral-400 hover:text-white p-1">
-                        <Send className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </form>
-                </div>
-
-              </div>
-
+            {/* Context Badge */}
+            <div className="inline-flex items-center gap-2 mb-4 text-[13px] tracking-wide font-medium bg-black/5 border border-black/10 py-1.5 px-3 rounded-full w-fit">
+              <span className="text-emerald-500">✨</span>
+              <span>Trusted by students, job seekers & teams</span>
             </div>
 
-            {/* Bottom Controls Capsule Bar (Replicating the visual icons) */}
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-white/95 dark:bg-[#1E1E21]/95 border border-neutral-200 dark:border-neutral-800/80 px-4 py-2 rounded-full shadow-lg flex items-center gap-2 z-30 max-w-[95%]">
-              
-              {/* Camera Trigger Toggle */}
-              <button 
-                onClick={() => setIsCameraActive(!isCameraActive)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors",
-                  isCameraActive 
-                    ? "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200" 
-                    : "bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                )}
+            {/* Main agency typography */}
+            <h1 
+              className="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight text-black mb-3 select-none leading-[1.05]"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Ace Your Next <br />
+              <span className="bg-gradient-to-r from-neutral-900 via-neutral-700 to-indigo-600 bg-clip-text text-transparent">
+                Interview with AI
+              </span>
+            </h1>
+
+            {/* Subtext description */}
+            <p className="text-base sm:text-lg text-neutral-600 mb-6 font-normal max-w-lg leading-relaxed">
+              Practice real interview questions, receive deep response diagnostics, polish your presentation, and secure your career objectives with automated precision.
+            </p>
+
+            {/* Typewriter feedback simulation */}
+            <div className="border-l-2 border-black/10 pl-4 py-1 mb-6">
+              <div 
+                className="pointer-events-none select-none text-[14px] uppercase tracking-wider text-neutral-400 mb-1"
+                style={{ fontFamily: "var(--font-heading)" }}
               >
-                <Video className="w-4 h-4" />
-                <span className="text-xs font-semibold hidden sm:inline">Camera</span>
-                <ChevronDown className="w-3 h-3 text-neutral-400" />
-              </button>
+                A.R.I.A system feed
+              </div>
+              <p className="text-neutral-800 text-[15px] sm:text-[17px] min-h-[40px] leading-relaxed">
+                {displayed}
+                {!done && (
+                  <span className="inline-block w-[1.5px] h-[1.1em] bg-black align-middle ml-[1px] cursor-blink" />
+                )}
+              </p>
+            </div>
 
-              {/* Mic Trigger Toggle */}
+            {/* Action pill inputs */}
+            <div 
+              className="flex flex-wrap gap-y-1 transition-all duration-[400ms] ease-out mb-6"
+              style={{
+                opacity: showPills ? 1 : 0,
+                transform: showPills ? "translateY(0)" : "translateY(8px)"
+              }}
+            >
+              <a href="#pricing" className="inline-flex items-center justify-center bg-black text-white hover:bg-neutral-800 rounded-full text-[13px] sm:text-[15px] px-5 py-[0.5em] mr-[0.4em] mb-[0.4em] font-medium transition-all duration-200 cursor-pointer">
+                Start Free
+              </a>
               <button 
-                onClick={() => setIsMicActive(!isMicActive)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors",
-                  isMicActive 
-                    ? "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200" 
-                    : "text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                )}
+                onClick={copyEmailToClipboard}
+                className="inline-flex items-center justify-center bg-white text-black border border-black/10 hover:border-black rounded-full text-[13px] sm:text-[15px] px-4 sm:px-5 py-[0.5em] mx-[0.2em] mb-[0.4em] whitespace-nowrap transition-colors duration-200 gap-2 cursor-pointer"
               >
-                {isMicActive ? (
-                  <Mic className="w-4 h-4 text-emerald-500" />
-                ) : (
-                  <MicOff className="w-4 h-4 text-red-500" />
-                )}
-                <span className={cn("text-xs font-semibold hidden sm:inline", !isMicActive && "line-through")}>Microphone</span>
-                <ChevronDown className="w-3 h-3 text-neutral-400" />
+                <span className="underline underline-offset-1">
+                  {copied ? "Copied address" : "Copy hello@mainframe.co"}
+                </span>
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M19 8h-2v11H8v2a1 1 0 001 1h10a1 1 0 001-1V9a1 1 0 00-1-1z" />
+                  <path d="M15 3H5a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V4a1 1 0 00-1-1zm-1 12H6V5h8v10z" />
+                </svg>
               </button>
+            </div>
 
-              <div className="w-[1px] h-5 bg-neutral-200 dark:bg-neutral-800 mx-1" />
-
-              {/* Emoji Button */}
-              <button className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                <Smile className="w-4 h-4" />
-              </button>
-
-              {/* Monitor Screen Share */}
-              <button className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                <Monitor className="w-4 h-4" />
-              </button>
-
-              {/* Hang up Call (Matches the red end-call icon) */}
-              <button className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition-shadow shadow-md shadow-red-500/15 flex items-center justify-center">
-                <PhoneOff className="w-4 h-4" />
-              </button>
-
+            {/* Social metrics strip */}
+            <div className="flex gap-6 border-t border-black/5 pt-5 text-[13px] text-neutral-500">
+              <div>
+                <strong className="block text-black text-base">10,000+</strong>
+                Practice Interviews
+              </div>
+              <div className="border-l border-black/5 pl-6">
+                <strong className="block text-black text-base">95%</strong>
+                User Satisfaction
+              </div>
+              <div className="border-l border-black/5 pl-6">
+                <strong className="block text-black text-base">500+</strong>
+                Companies Covered
+              </div>
             </div>
 
           </div>
 
-        </div>
 
-        {/* Optional Sandbox Interactions Counter */}
-        <div className="flex gap-4 z-10">
-          <button 
-            onClick={() => setCount(count + 1)}
-            className="px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-neutral-200 text-neutral-50 dark:text-neutral-900 text-sm font-semibold rounded-lg transition-all shadow-md active:scale-95"
-          >
-            Interact ({count})
-          </button>
-          <button 
-            className="px-6 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 text-sm font-semibold rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-850 transition-all active:scale-95"
-          >
-            Learn More
-          </button>
         </div>
+      </section>
 
-      </div>
+      {/* TRUSTED BRANDS CAROUSEL */}
+      <section className="relative z-10 bg-white border-y border-black/5 py-10 w-full overflow-hidden">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <p className="text-center text-xs uppercase tracking-widest text-neutral-400 font-semibold mb-6">
+            Candidates prepared here landed interviews at
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 text-neutral-400 text-[18px] sm:text-[22px] font-semibold tracking-tight">
+            <span>Google</span>
+            <span>Amazon</span>
+            <span>Microsoft</span>
+            <span>Meta</span>
+            <span>Adobe</span>
+            <span>Deloitte</span>
+            <span>Infosys</span>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES SECTION */}
+      <section id="features" className="relative z-10 bg-white py-20 w-full">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 
+              className="text-3xl sm:text-4xl text-black font-normal tracking-tight mb-4"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              Everything You Need to Crack Interviews
+            </h2>
+            <p className="text-neutral-500 text-base sm:text-lg">
+              Maximize evaluation indicators via deep feature intelligence tuned for modern production expectations.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* Feature 1 */}
+            <div className="border border-black/5 p-8 rounded-2xl bg-neutral-50 hover:border-black/20 transition-all duration-300">
+              <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-5 h-5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                </svg>
+              </div>
+              <h3 className="text-[20px] font-medium text-black mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                AI Mock Interviews
+              </h3>
+              <p className="text-neutral-500 text-sm leading-relaxed">
+                Experience simulated evaluations generated live based on target industry matrices and standard metrics.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="border border-black/5 p-8 rounded-2xl bg-neutral-50 hover:border-black/20 transition-all duration-300">
+              <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-5 h-5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-[20px] font-medium text-black mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                Instant AI Feedback
+              </h3>
+              <p className="text-neutral-500 text-sm leading-relaxed">
+                Unlock immediate scoring structures focusing on communication accuracy, structural syntax, confidence indices, and problem articulation.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="border border-black/5 p-8 rounded-2xl bg-neutral-50 hover:border-black/20 transition-all duration-300">
+              <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
+                <svg className="w-5 h-5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-[20px] font-medium text-black mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                Resume-Based Adaptations
+              </h3>
+              <p className="text-neutral-500 text-sm leading-relaxed">
+                Input your credentials and CV structures to extract highly hyper-personalized target sequences and challenge vectors.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* COMPARISON CHART */}
+      <section className="relative z-10 bg-neutral-50 py-20 w-full border-t border-black/5">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl text-black font-normal tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
+              Smarter Than Traditional Prep
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-black/5 overflow-hidden shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-neutral-100 border-b border-black/5 text-xs font-semibold uppercase tracking-wider text-neutral-600">
+                  <th className="p-4 sm:p-5">Traditional Method</th>
+                  <th className="p-4 sm:p-5">Mainframe A.R.I.A</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm text-neutral-600 divide-y divide-black/5">
+                <tr>
+                  <td className="p-4 sm:p-5">Generic templates and text pools</td>
+                  <td className="p-4 sm:p-5 font-semibold text-black">Dynamically adapted response profiles</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5">Delayed or absent feedback</td>
+                  <td className="p-4 sm:p-5 font-semibold text-indigo-600">Realtime diagnostics & metric scores</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5">One-directional text rehearsal</td>
+                  <td className="p-4 sm:p-5 font-semibold text-black">Active conversational video environments</td>
+                </tr>
+                <tr>
+                  <td className="p-4 sm:p-5">Static checklist templates</td>
+                  <td className="p-4 sm:p-5 font-semibold text-black">Comprehensive analytics updates</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING SECTION */}
+      <section id="pricing" className="relative z-10 bg-white py-20 w-full">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl sm:text-4xl text-black font-normal tracking-tight mb-4" style={{ fontFamily: "var(--font-heading)" }}>
+              Simple Transparent Sizing
+            </h2>
+            <p className="text-neutral-500 text-sm sm:text-base">
+              Secure optimized placement parameters across custom individual and corporate options.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            {/* Free */}
+            <div className="border border-black/5 p-8 rounded-2xl bg-white flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-medium text-black mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  Basic
+                </h3>
+                <div className="text-3xl font-normal text-black mb-6">$0</div>
+                <ul className="space-y-3 text-neutral-500 text-sm mb-8">
+                  <li>• 3 Full-simulation interviews</li>
+                  <li>• Fundamental response diagnostics</li>
+                  <li>• Standard network resource access</li>
+                </ul>
+              </div>
+              <button className="w-full py-3 px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-sm font-medium rounded-lg transition-colors">
+                Get Started
+              </button>
+            </div>
+
+            {/* Pro */}
+            <div className="border-2 border-black p-8 rounded-2xl bg-white flex flex-col justify-between relative shadow-lg">
+              <div className="absolute top-0 right-6 transform -translate-y-1/2 bg-black text-white text-[10px] tracking-widest uppercase py-1 px-3 rounded-full font-bold">
+                RECOMMENDED
+              </div>
+              <div>
+                <h3 className="text-xl font-medium text-black mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  Pro
+                </h3>
+                <div className="text-3xl font-normal text-black mb-6">$29<span className="text-sm text-neutral-500">/mo</span></div>
+                <ul className="space-y-3 text-neutral-600 text-sm mb-8 font-medium">
+                  <li className="text-indigo-600">• Unlimited mock evaluations</li>
+                  <li>• Complete resume diagnostic uploads</li>
+                  <li>• Targeted company matrix queries</li>
+                  <li>• Deep response metric analytics</li>
+                </ul>
+              </div>
+              <button className="w-full py-3 px-4 bg-black hover:bg-neutral-800 text-white text-sm font-medium rounded-lg transition-colors">
+                Start Pro
+              </button>
+            </div>
+
+            {/* Enterprise */}
+            <div className="border border-black/5 p-8 rounded-2xl bg-white flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-medium text-black mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                  Enterprise
+                </h3>
+                <div className="text-2xl font-normal text-black mb-6">Custom</div>
+                <ul className="space-y-3 text-neutral-500 text-sm mb-8">
+                  <li>• Universal team dashboards</li>
+                  <li>• Scalable cohort diagnostics</li>
+                  <li>• Dedicated API structural endpoints</li>
+                  <li>• Custom company matrix modules</li>
+                </ul>
+              </div>
+              <button className="w-full py-3 px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-sm font-medium rounded-lg transition-colors">
+                Contact Sales
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ SECTION */}
+      <section id="faq" className="relative z-10 bg-neutral-50 py-20 w-full border-t border-black/5">
+        <div className="max-w-3xl mx-auto px-5 sm:px-8">
+          <h2 className="text-3xl text-center text-black font-normal tracking-tight mb-12" style={{ fontFamily: "var(--font-heading)" }}>
+            Frequently Asked Questions
+          </h2>
+
+          <div className="space-y-6">
+            
+            <div className="bg-white p-6 rounded-xl border border-black/5">
+              <h4 className="text-base font-semibold text-black mb-2">Is it free to start?</h4>
+              <p className="text-neutral-500 text-sm leading-relaxed">
+                Yes. Your sandbox profile includes three full simulation cycles featuring interactive video formats without requiring credit details.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-black/5">
+              <h4 className="text-base font-semibold text-black mb-2">Can I analyze my customized resume files?</h4>
+              <p className="text-neutral-500 text-sm leading-relaxed">
+                Yes. Our adapter allows the scanning of PDF formats to extract specialized prompt configurations matched to your specific timeline.
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-black/5">
+              <h4 className="text-base font-semibold text-black mb-2">Is data transaction security preserved?</h4>
+              <p className="text-neutral-500 text-sm leading-relaxed">
+                Yes. All credentials, recorded data metrics, and evaluations use encrypted transfer protocols to safeguard personal assets.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="relative z-10 bg-black text-neutral-400 py-12 w-full border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="text-white text-sm font-medium">
+            © {new Date().getFullYear()} Mainframe Agency Corp. Built for next-generation systems.
+          </div>
+          <div className="flex gap-6 text-xs">
+            <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#how-it-works" className="hover:text-white transition-colors">Framework</a>
+            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#touch" className="hover:text-white transition-colors">Privacy</a>
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
-};
-
-// SVG Animated Grid Pattern
-const GridPattern = ({ offsetX, offsetY }: { offsetX: any, offsetY: any }) => {
-  return (
-    <svg className="w-full h-full">
-      <defs>
-        <motion.pattern
-          id="grid-pattern"
-          width="50"
-          height="50"
-          patternUnits="userSpaceOnUse"
-          x={offsetX}
-          y={offsetY}
-        >
-          <path
-            d="M 50 0 L 0 0 0 50"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-            className="text-neutral-900 dark:text-neutral-700" 
-          />
-        </motion.pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#grid-pattern)" />
-    </svg>
-  );
-};
+}
